@@ -5,6 +5,13 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 500
 WHITE = (255, 255, 255)
 
+SPEED = 7
+ACCELERATION = 1
+
+game_run = False
+rex_speed = 10
+x_ground = 0
+
 class Rex(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -14,16 +21,36 @@ class Rex(pygame.sprite.Sprite):
             pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex3.png').convert_alpha()
         ]
 
+        self.time = 0
+        self.speed = SPEED
+        self.on_air = False
+
         self.current_image = 0
         self.image = pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex1.png').convert_alpha()
 
         self.rect = self.image.get_rect()
-        self.rect[0] = 0
-        self.rect[1] = SCREEN_HEIGHT/2 - 8
+        self.rect[0] = SCREEN_WIDTH/2 - 300
+        self.rect[1] = SCREEN_HEIGHT/2 - 16
     
     def update(self):
-        self.current_image = (self.current_image + 1) % 2
-        self.image = self.images[self.current_image]
+        self.time += 1
+        if self.time % 3 == 0:
+            self.current_image = (self.current_image + 1) % 2
+            self.image = self.images[self.current_image]
+
+        self.speed += ACCELERATION
+        
+        if self.rect[1] > SCREEN_HEIGHT/2 - 16:
+            self.on_air = False
+            self.speed = 0 
+
+        self.rect[1] += self.speed 
+        
+    def bump(self):
+        if not self.on_air:
+            self.on_air = True
+            self.speed = -SPEED*2
+            self.rect[1] += self.speed 
 
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -37,9 +64,7 @@ rex_group = pygame.sprite.Group()
 rex = Rex()
 rex_group.add(rex)
 
-game_run = False
-rex_speed = 5
-x_ground = 0
+
 
 def load_background(running = False):
     global rex_speed, x_ground
@@ -53,7 +78,7 @@ def load_background(running = False):
 
 clock = pygame.time.Clock()
 while True:
-    clock.tick(10)
+    clock.tick(30)
     screen.fill(WHITE)
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -62,6 +87,7 @@ while True:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 game_run = True
+                rex.bump()
 
     load_background(game_run)
 
