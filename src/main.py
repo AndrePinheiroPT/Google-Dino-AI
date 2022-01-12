@@ -16,41 +16,67 @@ class Rex(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
 
-        self.images = [
+        self.rex_stop_images = [
+            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex1.png').convert_alpha(),
+            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex4.png').convert_alpha()
+        ]
+        self.rex_run_images = [
             pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex2.png').convert_alpha(),
             pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex3.png').convert_alpha()
+        ]
+        self.rex_down_images = [
+            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex5.png').convert_alpha(),
+            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex6.png').convert_alpha()
         ]
 
         self.time = 0
         self.speed = SPEED
-        self.on_air = False
+        self.rex_state = 'stop'
 
         self.current_image = 0
-        self.image = pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex1.png').convert_alpha()
+        self.image = self.rex_stop_images[0]
 
         self.rect = self.image.get_rect()
         self.rect[0] = SCREEN_WIDTH/2 - 300
         self.rect[1] = SCREEN_HEIGHT/2 - 16
     
     def update(self):
-        self.time += 1
-        if self.time % 3 == 0:
-            self.current_image = (self.current_image + 1) % 2
-            self.image = self.images[self.current_image]
+        if game_run:
+            self.time += 1
+            if self.rex_state == 'stop':
+                self.image = self.rex_stop_images[0]
+            else:
+                if self.time % 3 == 0:
+                    self.current_image = (self.current_image + 1) % 2
+                    self.image = self.rex_run_images[self.current_image]
+            
+            if self.rect[1] >= SCREEN_HEIGHT/2 - 16:
+                self.rex_state = 'running'
+                self.speed = 0 
+                if self.rect[3] < 40:
+                    self.rex_state = 'shifting'
+                    self.rect[1] = SCREEN_HEIGHT/2 - 16
+                else:
+                    self.rex_state = 'running'
+            else:
+                self.rex_state = 'bumping'
+                self.speed += ACCELERATION
 
-        self.speed += ACCELERATION
-        
-        if self.rect[1] > SCREEN_HEIGHT/2 - 16:
-            self.on_air = False
-            self.speed = 0 
-
-        self.rect[1] += self.speed 
+            self.rect[1] += self.speed 
         
     def bump(self):
-        if not self.on_air:
-            self.on_air = True
+        if self.rex_state != 'bumping' and self.rex_state != 'shifting':
+            
             self.speed = -SPEED*2
             self.rect[1] += self.speed 
+
+    def shift(self):
+        if self.rex_state == 'running':
+            self.time += 1
+            if self.time % 3 == 0:
+                self.current_image = (self.current_image + 1) % 2
+                self.image = self.rex_down_images[self.current_image]
+            
 
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -80,14 +106,17 @@ clock = pygame.time.Clock()
 while True:
     clock.tick(30)
     screen.fill(WHITE)
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_SPACE]:
+        game_run = True
+        rex.bump()
+    elif keys[pygame.K_DOWN]:
+        rex.shift()
+
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                game_run = True
-                rex.bump()
 
     load_background(game_run)
 
