@@ -43,40 +43,39 @@ class Rex(pygame.sprite.Sprite):
     def update(self):
         if game_run:
             self.time += 1
-            if self.rex_state == 'stop':
+            if self.rex_state == 'stop' or self.rex_state == 'bumping':
                 self.image = self.rex_stop_images[0]
-            else:
+            elif self.rex_state == 'running': 
                 if self.time % 3 == 0:
                     self.current_image = (self.current_image + 1) % 2
                     self.image = self.rex_run_images[self.current_image]
-            
-            if self.rect[1] >= SCREEN_HEIGHT/2 - 16:
-                self.rex_state = 'running'
+                    
+            elif self.rex_state == 'shifting':
+                if self.time % 3 == 0:
+                    self.current_image = (self.current_image + 1) % 2
+                    self.image = self.rex_down_images[self.current_image]
+
+            self.rect[3] = self.image.get_rect()[3]
+
+            if self.rect[1] >= SCREEN_HEIGHT/2 - 16 or self.rex_state == 'shifting':
+                self.rect[1] = SCREEN_HEIGHT/2 - 16
                 self.speed = 0 
                 if self.rect[3] < 40:
-                    self.rex_state = 'shifting'
-                    self.rect[1] = SCREEN_HEIGHT/2 - 16
-                else:
-                    self.rex_state = 'running'
+                    self.rect[1] = SCREEN_HEIGHT/2 + 3
             else:
-                self.rex_state = 'bumping'
                 self.speed += ACCELERATION
 
             self.rect[1] += self.speed 
         
     def bump(self):
         if self.rex_state != 'bumping' and self.rex_state != 'shifting':
-            
+            self.rex_state = 'bumping'
             self.speed = -SPEED*2
             self.rect[1] += self.speed 
-
+            
     def shift(self):
         if self.rex_state == 'running':
-            self.time += 1
-            if self.time % 3 == 0:
-                self.current_image = (self.current_image + 1) % 2
-                self.image = self.rex_down_images[self.current_image]
-            
+            self.rex_state = 'shifting'
 
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
