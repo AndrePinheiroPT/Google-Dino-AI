@@ -8,9 +8,11 @@ WHITE = (255, 255, 255)
 SPEED = 7
 ACCELERATION = 1
 
-game_run = False
-rex_speed = 10
-x_ground = 0
+GROUND_WIDTH = 2*SCREEN_WIDTH
+GROUND_HEIGHT = 15
+
+game_run = True
+ground_speed = 10
 
 class Rex(pygame.sprite.Sprite):
     def __init__(self):
@@ -58,9 +60,11 @@ class Rex(pygame.sprite.Sprite):
             self.rect[3] = self.image.get_rect()[3]
 
             if self.rect[1] >= SCREEN_HEIGHT/2 - 16 or self.rex_state == 'shifting':
+                self.rex_state == 'running'
                 self.rect[1] = SCREEN_HEIGHT/2 - 16
                 self.speed = 0 
                 if self.rect[3] < 40:
+                    self.rex_state == 'shifting'
                     self.rect[1] = SCREEN_HEIGHT/2 + 3
             else:
                 self.speed += ACCELERATION
@@ -77,6 +81,21 @@ class Rex(pygame.sprite.Sprite):
         if self.rex_state == 'running':
             self.rex_state = 'shifting'
 
+class Ground(pygame.sprite.Sprite):
+    def __init__(self, x):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/ground.png')
+        self.image = pygame.transform.scale(self.image, (GROUND_WIDTH, GROUND_HEIGHT))
+        self.rect = self.image.get_rect()
+        self.rect[0] = x
+
+    def update(self):
+        self.rect[0] -= ground_speed
+        self.rect[1] = SCREEN_HEIGHT/2 + 20 
+
+def is_off_screen(sprite):
+    return sprite.rect[0] < -sprite.rect[2]
+
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('T-Rex')
@@ -89,17 +108,10 @@ rex_group = pygame.sprite.Group()
 rex = Rex()
 rex_group.add(rex)
 
-
-
-def load_background(running = False):
-    global rex_speed, x_ground
-    img_ground = pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/ground.png')
-    if running:
-        x_ground -= rex_speed
-    if abs(x_ground) > img_ground.get_width():
-        x_ground = 0
-    screen.blit(img_ground, (x_ground, 270))
-    screen.blit(img_ground, (img_ground.get_width() + x_ground, 270))
+ground_group = pygame.sprite.Group()
+for i in range(0, 2):
+    ground = Ground(GROUND_WIDTH*i)
+    ground_group.add(ground)
 
 clock = pygame.time.Clock()
 while True:
@@ -107,20 +119,27 @@ while True:
     screen.fill(WHITE)
 
     keys = pygame.key.get_pressed()
+    if rex.rect[1] >= SCREEN_HEIGHT/2 - 16 and game_run:
+        rex.rex_state = 'running'
     if keys[pygame.K_SPACE]:
-        game_run = True
         rex.bump()
     elif keys[pygame.K_DOWN]:
         rex.shift()
-
+    
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
 
-    load_background(game_run)
+    if is_off_screen(ground_group.sprites()[0]):
+        ground_group.remove(ground_group.sprites()[0])
+
+        new_ground = Ground(GROUND_WIDTH - 20)
+        ground_group.add(new_ground)
 
     rex_group.update()
+    ground_group.update()
 
     rex_group.draw(screen)
+    ground_group.draw(screen)
 
     pygame.display.update()
