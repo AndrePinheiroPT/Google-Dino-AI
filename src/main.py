@@ -1,6 +1,8 @@
 from curses import KEY_DOWN
+from tkinter import HIDDEN
 import pygame, random
 from pygame.locals import *
+import numpy as np
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 500
@@ -15,11 +17,10 @@ GROUND_HEIGHT = 15
 OBSTACLE_GAP = SCREEN_WIDTH*0.75
 
 game_run = True
-distance = 0
 ground_speed = 8
 
 class Rex(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, id):
         pygame.sprite.Sprite.__init__(self)
 
         self.rex_stop_images = [
@@ -35,22 +36,32 @@ class Rex(pygame.sprite.Sprite):
             pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex6.png').convert_alpha()
         ]
 
+        self.id = id
+        self.inputs = None
+        self.weights = np.random.rand(2, 5, 5)
+        self.bias = np.random.rand(2, 5)
+        self.hidden = np.zeros(5)
+
         self.time = 0
         self.speed = SPEED
-        self.rex_state = 'stop'
+        self.rex_state = 'bumping'
 
         self.current_image = 0
         self.image = self.rex_stop_images[0]
         self.mask = pygame.mask.from_surface(self.image)
 
         self.rect = self.image.get_rect()
-        self.rect[0] = SCREEN_WIDTH/2 - 300
+        self.rect[0] = SCREEN_WIDTH/2 - 300 + random.randint(-25, 25)
         self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
+
+    def feed_forward(self):
+        for n in range(0, self.hidden.shape):
+            print()
     
     def update(self):
         if game_run:
             self.time += 1
-            if self.rex_state == 'stop' or self.rex_state == 'bumping':
+            if self.rex_state == 'bumping':
                 self.image = self.rex_stop_images[0]
             elif self.rex_state == 'running': 
                 if self.time % 5 == 0:
@@ -75,7 +86,10 @@ class Rex(pygame.sprite.Sprite):
                 self.speed += ACCELERATION
 
             self.rect[1] += self.speed 
-        
+    
+    def set_inputs(self, inputs):
+        self.inputs = inputs
+
     def bump(self):
         if self.rex_state != 'bumping' and self.rex_state != 'shifting':
             self.rex_state = 'bumping'
@@ -87,8 +101,8 @@ class Rex(pygame.sprite.Sprite):
             self.rex_state = 'shifting'
 
     def dead(self):
-        rex.rex_state = 'stop'
         self.image = self.rex_stop_images[1]
+        self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
 
 class Ground(pygame.sprite.Sprite):
     def __init__(self, x):
@@ -119,6 +133,7 @@ class Cactus(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect[0] = x
         self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
+        self.h = self.rect[1]
     
     def update(self):
         self.rect[0] -= ground_speed
@@ -139,6 +154,7 @@ class Bird(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect[0] = x
         self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3]) - h
+        self.h = h
     
     def update(self):
         if self.time % 3 == 0:
@@ -147,9 +163,6 @@ class Bird(pygame.sprite.Sprite):
         self.time += 1
         self.rect[0] -= ground_speed
         
-def is_off_screen(sprite):
-    return sprite.rect[0] < -sprite.rect[2]
-
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('T-Rex')
@@ -158,20 +171,31 @@ pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.font.init()
 font = pygame.font.SysFont('Arial', 15)
 
-rex_group = pygame.sprite.Group()
-rex = Rex()
-rex_group.add(rex)
+def is_off_screen(sprite):
+    return sprite.rect[0] < -sprite.rect[2]
 
-ground_group = pygame.sprite.Group()
-for i in range(0, 2):
-    ground = Ground(GROUND_WIDTH*i)
-    ground_group.add(ground)
+rex_group = rex = ground_group = obstacle_group = None
+distance = 0
+def reset_game():
+    global rex_group, rex, ground_group, obstacle_group, distance
+    distance = 0
+    rex_group = pygame.sprite.Group()
+    rex = Rex(1)
+    rex_group.add(rex)
 
-obstacle_group = pygame.sprite.Group()
-for i in range(0, 2):
-    cactus = Cactus(SCREEN_WIDTH + i*OBSTACLE_GAP, random.randint(0, 1))
-    obstacle_group.add(cactus)
+    ground_group = pygame.sprite.Group()
+    for i in range(0, 2):
+        ground = Ground(GROUND_WIDTH*i)
+        ground_group.add(ground)
 
+    obstacle_group = pygame.sprite.Group()
+    for i in range(0, 2):
+        cactus = Cactus(SCREEN_WIDTH + i*OBSTACLE_GAP, random.randint(0, 1))
+        obstacle_group.add(cactus)
+
+
+reset_game() 
+       
 clock = pygame.time.Clock()
 while True:
     clock.tick(50)
@@ -192,7 +216,7 @@ while True:
         if event.type == KEYDOWN:
             if event.key == pygame.K_SPACE and not game_run:
                 game_run = True
-
+                reset_game()
 
     if is_off_screen(ground_group.sprites()[0]):
         ground_group.remove(ground_group.sprites()[0])
@@ -203,7 +227,7 @@ while True:
     if is_off_screen(obstacle_group.sprites()[0]):
         obstacle_group.remove(obstacle_group.sprites()[0])
         if random.randint(0, 1) and distance > 500:
-            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 2)*25) 
+            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 2)*32) 
         else:
             new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 1)) 
         obstacle_group.add(new_obstacle)
