@@ -1,15 +1,21 @@
-from main import Rex, ground_speed, obstacle_group
+import pygame
+POPULATION_LENGTH = 1
 
-POPULATION_LENGTH = 2000
+def start_population(Especie):
+    especie_group = pygame.sprite.Group()
+    for i in range(0, POPULATION_LENGTH):
+        especie_group.add(Especie(i))
 
-population = [ Rex(i) for i in range(0, POPULATION_LENGTH)]
+    return especie_group
 
-for rex in population:
-    for obstacle in obstacle_group.sprites():
-        if rex.rect[0] <= obstacle.rect[0]:
-            inputs = [obstacle.rect[0] - rex.rect[0], obstacle.rect[2], obstacle.rect[3], obstacle.h]
-            rex.set_inputs(inputs)
-            break
-        else:
-            continue
+def get_senses(especie_group, obstacles_group, args):
+    for especie in especie_group.sprites():
+        for obstacle in obstacles_group.sprites():
+            if especie.rect[0] <= obstacle.rect[0]:
+                # distance between rex and obstacle, obstacle witdth, obstacle height, obstacle distance to the ground
+                inputs = [obstacle.rect[0] - especie.rect[0], obstacle.rect[2], obstacle.rect[3], obstacle.h, *args]
+                especie.set_inputs(inputs)
+                break
+            else:
+                continue
     

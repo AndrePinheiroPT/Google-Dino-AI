@@ -3,6 +3,7 @@ from tkinter import HIDDEN
 import pygame, random
 from pygame.locals import *
 import numpy as np
+from neural_network import *
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 500
@@ -55,40 +56,39 @@ class Rex(pygame.sprite.Sprite):
         self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
 
     def feed_forward(self):
-        for n in range(0, self.hidden.shape):
-            print()
-    
+        self.hidden.shape = self.weights[0].transpose()*self.inputs + self.bias[1]
+        print(self.hidden)
+
     def update(self):
-        if game_run:
-            self.time += 1
-            if self.rex_state == 'bumping':
-                self.image = self.rex_stop_images[0]
-            elif self.rex_state == 'running': 
-                if self.time % 5 == 0:
-                    self.current_image = (self.current_image + 1) % 2
-                    self.image = self.rex_run_images[self.current_image]
-                    
-            elif self.rex_state == 'shifting':
-                if self.time % 5 == 0:
-                    self.current_image = (self.current_image + 1) % 2
-                    self.image = self.rex_down_images[self.current_image]
+        self.time += 1
+        if self.rex_state == 'bumping':
+            self.image = self.rex_stop_images[0]
+        elif self.rex_state == 'running': 
+            if self.time % 5 == 0:
+                self.current_image = (self.current_image + 1) % 2
+                self.image = self.rex_run_images[self.current_image]
+                
+        elif self.rex_state == 'shifting':
+            if self.time % 5 == 0:
+                self.current_image = (self.current_image + 1) % 2
+                self.image = self.rex_down_images[self.current_image]
 
-            self.rect[3] = self.image.get_rect()[3]
-            self.mask = pygame.mask.from_surface(self.image)
+        self.rect[3] = self.image.get_rect()[3]
+        self.mask = pygame.mask.from_surface(self.image)
 
-            if self.rect[1] >= SCREEN_HEIGHT/2 + (35 - self.rect[3]) or self.rex_state == 'shifting':
-                self.rex_state == 'running'
-                self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
-                self.speed = 0 
-                if self.rect[3] < 40:
-                    self.rex_state == 'shifting'
-            else:
-                self.speed += ACCELERATION
+        if self.rect[1] >= SCREEN_HEIGHT/2 + (35 - self.rect[3]) or self.rex_state == 'shifting':
+            self.rex_state == 'running'
+            self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
+            self.speed = 0 
+            if self.rect[3] < 40:
+                self.rex_state == 'shifting'
+        else:
+            self.speed += ACCELERATION
 
-            self.rect[1] += self.speed 
+        self.rect[1] += self.speed 
     
     def set_inputs(self, inputs):
-        self.inputs = inputs
+        self.inputs = np.array(inputs)
 
     def bump(self):
         if self.rex_state != 'bumping' and self.rex_state != 'shifting':
@@ -179,9 +179,8 @@ distance = 0
 def reset_game():
     global rex_group, rex, ground_group, obstacle_group, distance
     distance = 0
-    rex_group = pygame.sprite.Group()
-    rex = Rex(1)
-    rex_group.add(rex)
+    rex_group = start_population(Rex)
+    rex = rex_group.sprites()[0]
 
     ground_group = pygame.sprite.Group()
     for i in range(0, 2):
@@ -231,6 +230,8 @@ while True:
         else:
             new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 1)) 
         obstacle_group.add(new_obstacle)
+    
+    get_senses(rex_group, obstacle_group, [ground_speed])
 
     if game_run:
         rex_group.update()
@@ -244,6 +245,6 @@ while True:
     if pygame.sprite.groupcollide(rex_group, obstacle_group, False, False, pygame.sprite.collide_mask):
         game_run = False 
         rex.dead()
-
+    
     distance += ground_speed
     pygame.display.update()
