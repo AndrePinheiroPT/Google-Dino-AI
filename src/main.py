@@ -39,8 +39,12 @@ class Rex(pygame.sprite.Sprite):
 
         self.id = id
         self.inputs = None
-        self.weights = np.random.rand(2, 5, 5)
-        self.bias = np.random.rand(2, 5)
+        self.weights_layer1 = np.random.rand(5, 5)
+        self.bias_layer1 = np.random.rand(5, 1)
+
+        self.weights_layer2 = np.random.rand(2, 5)
+        self.bias_layer2 = np.random.rand(2, 1)
+
         self.hidden = np.zeros(5)
 
         self.time = 0
@@ -56,8 +60,9 @@ class Rex(pygame.sprite.Sprite):
         self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
 
     def feed_forward(self):
-        self.hidden.shape = self.weights[0].transpose()*self.inputs + self.bias[1]
-        print(self.hidden)
+        self.hidden = relu(np.matmul(self.weights_layer1, self.inputs) + self.bias_layer1)
+        output = relu(np.matmul(self.weights_layer2, self.hidden) + self.bias_layer2)
+        print(output)
 
     def update(self):
         self.time += 1
@@ -230,8 +235,6 @@ while True:
         else:
             new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 1)) 
         obstacle_group.add(new_obstacle)
-    
-    get_senses(rex_group, obstacle_group, [ground_speed])
 
     if game_run:
         rex_group.update()
@@ -241,6 +244,9 @@ while True:
     rex_group.draw(screen)
     ground_group.draw(screen)
     obstacle_group.draw(screen)
+
+    get_senses(rex_group, obstacle_group, [ground_speed])
+    rex.feed_forward()
 
     if pygame.sprite.groupcollide(rex_group, obstacle_group, False, False, pygame.sprite.collide_mask):
         game_run = False 

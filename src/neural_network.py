@@ -1,4 +1,5 @@
 import pygame
+import numpy as np
 POPULATION_LENGTH = 1
 
 def start_population(Especie):
@@ -18,4 +19,6 @@ def get_senses(especie_group, obstacles_group, args):
                 break
             else:
                 continue
-    
+
+def relu(x):
+    return np.maximum(x, 0)
