@@ -60,37 +60,38 @@ class Rex(pygame.sprite.Sprite):
         self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
 
     def feed_forward(self):
-        self.hidden = relu(np.matmul(self.weights_layer1, self.inputs) + self.bias_layer1)
-        output = relu(np.matmul(self.weights_layer2, self.hidden) + self.bias_layer2)
-        print(output)
+        self.hidden = relu(self.weights_layer1.dot(self.inputs)[np.newaxis].transpose() + self.bias_layer1)
+        output = relu(self.weights_layer2.dot(self.hidden) + self.bias_layer2)
+        return output
 
     def update(self):
-        self.time += 1
-        if self.rex_state == 'bumping':
-            self.image = self.rex_stop_images[0]
-        elif self.rex_state == 'running': 
-            if self.time % 5 == 0:
-                self.current_image = (self.current_image + 1) % 2
-                self.image = self.rex_run_images[self.current_image]
-                
-        elif self.rex_state == 'shifting':
-            if self.time % 5 == 0:
-                self.current_image = (self.current_image + 1) % 2
-                self.image = self.rex_down_images[self.current_image]
+        if self.rex_state != 'dead':
+            self.time += 1
+            if self.rex_state == 'bumping':
+                self.image = self.rex_stop_images[0]
+            elif self.rex_state == 'running': 
+                if self.time % 5 == 0:
+                    self.current_image = (self.current_image + 1) % 2
+                    self.image = self.rex_run_images[self.current_image]
+                    
+            elif self.rex_state == 'shifting':
+                if self.time % 5 == 0:
+                    self.current_image = (self.current_image + 1) % 2
+                    self.image = self.rex_down_images[self.current_image]
 
-        self.rect[3] = self.image.get_rect()[3]
-        self.mask = pygame.mask.from_surface(self.image)
+            self.rect[3] = self.image.get_rect()[3]
+            self.mask = pygame.mask.from_surface(self.image)
 
-        if self.rect[1] >= SCREEN_HEIGHT/2 + (35 - self.rect[3]) or self.rex_state == 'shifting':
-            self.rex_state == 'running'
-            self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
-            self.speed = 0 
-            if self.rect[3] < 40:
-                self.rex_state == 'shifting'
-        else:
-            self.speed += ACCELERATION
+            if self.rect[1] >= SCREEN_HEIGHT/2 + (35 - self.rect[3]) or self.rex_state == 'shifting':
+                self.rex_state == 'running'
+                self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
+                self.speed = 0 
+                if self.rect[3] < 40:
+                    self.rex_state == 'shifting'
+            else:
+                self.speed += ACCELERATION
 
-        self.rect[1] += self.speed 
+            self.rect[1] += self.speed 
     
     def set_inputs(self, inputs):
         self.inputs = np.array(inputs)
@@ -106,6 +107,7 @@ class Rex(pygame.sprite.Sprite):
             self.rex_state = 'shifting'
 
     def dead(self):
+        self.rex_state == 'dead'
         self.image = self.rex_stop_images[1]
         self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
 
@@ -179,13 +181,12 @@ font = pygame.font.SysFont('Arial', 15)
 def is_off_screen(sprite):
     return sprite.rect[0] < -sprite.rect[2]
 
-rex_group = rex = ground_group = obstacle_group = None
+rex_group = ground_group = obstacle_group = None
 distance = 0
 def reset_game():
-    global rex_group, rex, ground_group, obstacle_group, distance
+    global rex_group, ground_group, obstacle_group, distance
     distance = 0
     rex_group = start_population(Rex)
-    rex = rex_group.sprites()[0]
 
     ground_group = pygame.sprite.Group()
     for i in range(0, 2):
@@ -204,15 +205,6 @@ clock = pygame.time.Clock()
 while True:
     clock.tick(50)
     screen.fill(WHITE)
-
-    keys = pygame.key.get_pressed()
-    if game_run:
-        if rex.rect[1] >= SCREEN_HEIGHT/2 - 15:
-            rex.rex_state = 'running'
-        if keys[pygame.K_SPACE]:
-            rex.bump()
-        elif keys[pygame.K_DOWN]:
-            rex.shift()
     
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -246,11 +238,18 @@ while True:
     obstacle_group.draw(screen)
 
     get_senses(rex_group, obstacle_group, [ground_speed])
-    rex.feed_forward()
+    for rex in rex_group.sprites():
+        outputs = rex.feed_forward()
 
-    if pygame.sprite.groupcollide(rex_group, obstacle_group, False, False, pygame.sprite.collide_mask):
-        game_run = False 
-        rex.dead()
+        if rex.rect[1] >= SCREEN_HEIGHT/2 - 15:
+            rex.rex_state = 'running'
+        if outputs[0] > 0:
+            rex.bump()
+        elif outputs[1] > 0:
+            rex.shift() 
+
+        if pygame.sprite.spritecollideany(rex, obstacle_group, pygame.sprite.collide_mask):
+            rex.dead()
     
     distance += ground_speed
     pygame.display.update()

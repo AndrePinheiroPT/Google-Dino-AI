@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-POPULATION_LENGTH = 1
+POPULATION_LENGTH = 100
 
 def start_population(Especie):
     especie_group = pygame.sprite.Group()
