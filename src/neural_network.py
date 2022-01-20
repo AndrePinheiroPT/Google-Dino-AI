@@ -22,3 +22,6 @@ def get_senses(especie_group, obstacles_group, args):
 
 def relu(x):
     return np.maximum(x, 0)
+
+def new_generation(population):
+    return population
