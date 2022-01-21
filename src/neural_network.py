@@ -1,3 +1,4 @@
+from hmac import new
 import pygame
 import numpy as np
 POPULATION_LENGTH = 100
@@ -5,7 +6,7 @@ POPULATION_LENGTH = 100
 def start_population(Especie):
     especie_group = pygame.sprite.Group()
     for i in range(0, POPULATION_LENGTH):
-        especie_group.add(Especie(i))
+        especie_group.add(Especie())
 
     return especie_group
 
@@ -25,42 +26,41 @@ def relu(x):
 
 def fitness(population, ref):
     dist_list = []
-    for esp in population:
+    for esp in population.sprites():
         dist_list.append(esp.dist / ref)
     return dist_list
 
-def crossing_over(best_couple, Especie):
-    new_genome = Especie(0)
-    i = np.random.randint(5)
-
-    tmp = best_couple[0].weights_layer1[:i].copy()
-    #self.weights_layer1 = np.random.randint(-10, 11, size=(5, 5)) / 10
-        #self.bias_layer1 = np.random.randint(-10, 11, size=(5, 1)) / 10
-
-        #self.weights_layer2 = np.random.randint(-10, 11, size=(2, 5)) / 10
-        #self.bias_layer2 = np.random.randint(-10, 11, size=(2, 1)) / 10
-    
-    best_couple[0]
-    new_genome.weights_layer1 = 
-
-
-def mutation(genome):
+def mutation(entitie):
+    if np.random.random() <= 0.1:
+        entitie.weights_layer1[np.random.randint(5)][np.random.randint(5)] = np.random.randint(-10, 11)/10
+    if np.random.random() <= 0.1:
+        entitie.weights_layer2[np.random.randint(2)][np.random.randint(5)] = np.random.randint(-10, 11)/10
+    if np.random.random() <= 0.1:
+        entitie.bias_layer1[np.random.randint(5)] = np.random.randint(-10, 11)/10
+    if np.random.random() <= 0.1:
+        entitie.bias_layer2[np.random.randint(2)] = np.random.randint(-10, 11)/10
+    return entitie
 
 
 def new_generation(population, ref, Especie):
     population_fitness = fitness(population, ref)
 
-    best_couple = pygame.sprite.Group()
+    best_id = 0
+    for i in range(1, POPULATION_LENGTH):
+        if population_fitness[best_id] <= population_fitness[i]:
+            best_id = i
 
-    for id in range(0, POPULATION_LENGTH):
-        if np.random.random() >= population_fitness[id]:
-            best_couple.add(population[id])
-        
-        if len(best_couple) >= 2:
-            break
-    
-    crossing_over(best_couple, esp)
+    best_entitie = population.sprites()[best_id]
 
-    if np.random.random() <= 0.1:
-        mutatuion()
-    return population
+    new_population = pygame.sprite.Group()
+
+    for i in range(0, 100):
+        new_entitie = Especie()
+        new_entitie.weights_layer1 = best_entitie.weights_layer1 
+        new_entitie.bias_layer1 = best_entitie.bias_layer1 
+        new_entitie.weights_layer2 = best_entitie.weights_layer2
+        new_entitie.bias_layer2 = best_entitie.bias_layer2
+        new_entitie = mutation(new_entitie)
+        new_population.add(new_entitie)
+
+    return new_population

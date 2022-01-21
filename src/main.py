@@ -22,7 +22,7 @@ game_run = True
 ground_speed = 8
 
 class Rex(pygame.sprite.Sprite):
-    def __init__(self, id):
+    def __init__(self):
         pygame.sprite.Sprite.__init__(self)
 
         self.rex_stop_images = [
@@ -40,7 +40,6 @@ class Rex(pygame.sprite.Sprite):
 
         self.dist = 0
 
-        self.id = id
         self.inputs = None
         self.weights_layer1 = np.random.randint(-10, 11, size=(5, 5)) / 10
         self.bias_layer1 = np.random.randint(-10, 11, size=(5, 1)) / 10
@@ -191,7 +190,7 @@ distance = 0
 def reset_game(randomic=False):
     global rex_group, ground_group, obstacle_group, distance
     
-    rex_group = start_population(Rex) if randomic else new_generation(rex_group, distance)
+    rex_group = start_population(Rex) if randomic else new_generation(rex_group, distance, Rex)
     distance = 0
 
     ground_group = pygame.sprite.Group()
@@ -255,12 +254,11 @@ while True:
 
         if rex.state == 'dead':
             population_dead += 1
-        else: 
+        else:
             rex.dist = distance
-        
-
+            
     if population_dead == POPULATION_LENGTH:
-        reset_game(True)
+        reset_game()
     
     distance += ground_speed
     pygame.display.update()
