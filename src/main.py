@@ -38,13 +38,15 @@ class Rex(pygame.sprite.Sprite):
             pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex6.png').convert_alpha()
         ]
 
+        self.dist = 0
+
         self.id = id
         self.inputs = None
-        self.weights_layer1 = np.random.rand(5, 5)
-        self.bias_layer1 = np.random.rand(5, 1)
+        self.weights_layer1 = np.random.randint(-10, 11, size=(5, 5)) / 10
+        self.bias_layer1 = np.random.randint(-10, 11, size=(5, 1)) / 10
 
-        self.weights_layer2 = np.random.rand(2, 5)
-        self.bias_layer2 = np.random.rand(2, 1)
+        self.weights_layer2 = np.random.randint(-10, 11, size=(2, 5)) / 10
+        self.bias_layer2 = np.random.randint(-10, 11, size=(2, 1)) / 10
 
         self.hidden = np.zeros(5)
 
@@ -188,8 +190,9 @@ rex_group = ground_group = obstacle_group = None
 distance = 0
 def reset_game(randomic=False):
     global rex_group, ground_group, obstacle_group, distance
+    
+    rex_group = start_population(Rex) if randomic else new_generation(rex_group, distance)
     distance = 0
-    rex_group = start_population(Rex) if randomic else new_generation(rex_group)
 
     ground_group = pygame.sprite.Group()
     for i in range(0, 2):
@@ -252,6 +255,9 @@ while True:
 
         if rex.state == 'dead':
             population_dead += 1
+        else: 
+            rex.dist = distance
+        
 
     if population_dead == POPULATION_LENGTH:
         reset_game(True)
