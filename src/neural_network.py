@@ -1,4 +1,3 @@
-from hmac import new
 import pygame
 import numpy as np
 POPULATION_LENGTH = 100
@@ -25,42 +24,79 @@ def relu(x):
     return np.maximum(x, 0)
 
 def fitness(population, ref):
-    dist_list = []
-    for esp in population.sprites():
-        dist_list.append(esp.dist / ref)
-    return dist_list
+    group = population
+    new_group = pygame.sprite.Group()
+    
+    for k in range(POPULATION_LENGTH):
+        best = group.sprites()[0]
+        for esp in group.sprites():
+            esp.fitness = esp.dist / ref
+
+            if best.fitness <= esp.fitness:
+                best = esp
+        
+        group.remove(best)
+        new_group.add(best)
+
+    return new_group
+
 
 def mutation(entitie):
-    if np.random.random() <= 0.1:
-        entitie.weights_layer1[np.random.randint(5)][np.random.randint(5)] = np.random.randint(-10, 11)/10
-    if np.random.random() <= 0.1:
-        entitie.weights_layer2[np.random.randint(2)][np.random.randint(5)] = np.random.randint(-10, 11)/10
-    if np.random.random() <= 0.1:
-        entitie.bias_layer1[np.random.randint(5)] = np.random.randint(-10, 11)/10
-    if np.random.random() <= 0.1:
-        entitie.bias_layer2[np.random.randint(2)] = np.random.randint(-10, 11)/10
+    for i in range(4):
+        rvalue = np.random.randint(-2000, 2001)/100
+        if np.random.random() <= 0.05:
+            if i == 0:
+                entitie.w1[np.random.randint(5)][np.random.randint(5)] = rvalue
+            elif i == 1:
+                entitie.w2[np.random.randint(2)][np.random.randint(5)] = rvalue
+            elif i == 2:
+                entitie.b1[np.random.randint(5)] = rvalue
+            elif i == 3:
+                entitie.b2[np.random.randint(2)] = rvalue
     return entitie
 
 
+def crossing_over(ent1, ent2, Esp):
+    new_entitie = Esp()
+    n1 = np.random.randint(5)
+    new_entitie.w1[:n1] = ent1.w1[:n1]
+    new_entitie.w1[n1:] = ent2.w1[n1:]
+
+    n2 = np.random.randint(5)
+    new_entitie.w2 = new_entitie.w2.transpose()
+    new_entitie.w2[:n2] = ent1.w2.transpose()[:n2]
+    new_entitie.w2[n2:] = ent2.w2.transpose()[n2:]
+    new_entitie.w2 = new_entitie.w2.transpose()
+
+    n3 = np.random.randint(5)
+    new_entitie.b1[:n3] = ent1.b1[:n3]
+    new_entitie.b1[n3:] = ent2.b1[n3:]
+
+    n4 = np.random.randint(2)
+    new_entitie.b2[:n4] = ent1.b2[:n4]
+    new_entitie.b2[n4:] = ent2.b2[n4:]
+
+    return new_entitie
+
+
 def new_generation(population, ref, Especie):
+    new_population = pygame.sprite.Group()
     population_fitness = fitness(population, ref)
 
-    best_id = 0
-    for i in range(1, POPULATION_LENGTH):
-        if population_fitness[best_id] <= population_fitness[i]:
-            best_id = i
+    for i in range(0, POPULATION_LENGTH, 2):
+        if i < POPULATION_LENGTH:
+            prev_ent = Especie()
+            prev_ent.w1 = population_fitness.sprites()[i].w1
+            prev_ent.w2 = population_fitness.sprites()[i].w2
+            prev_ent.b1 = population_fitness.sprites()[i].b1
+            prev_ent.b2 = population_fitness.sprites()[i].b2
 
-    best_entitie = population.sprites()[best_id]
+            new_population.add(prev_ent)
 
-    new_population = pygame.sprite.Group()
-
-    for i in range(0, 100):
-        new_entitie = Especie()
-        new_entitie.weights_layer1 = best_entitie.weights_layer1 
-        new_entitie.bias_layer1 = best_entitie.bias_layer1 
-        new_entitie.weights_layer2 = best_entitie.weights_layer2
-        new_entitie.bias_layer2 = best_entitie.bias_layer2
-        new_entitie = mutation(new_entitie)
-        new_population.add(new_entitie)
+        try:
+            new_ent = crossing_over(population_fitness.sprites()[i], population_fitness.sprites()[i+1], Especie)
+            new_population.add(mutation(new_ent))
+        except Exception:
+            pass
 
     return new_population

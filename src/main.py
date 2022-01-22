@@ -39,13 +39,15 @@ class Rex(pygame.sprite.Sprite):
         ]
 
         self.dist = 0
+        self.fitness = 0
 
         self.inputs = None
-        self.weights_layer1 = np.random.randint(-10, 11, size=(5, 5)) / 10
-        self.bias_layer1 = np.random.randint(-10, 11, size=(5, 1)) / 10
+        
+        self.w1 = np.random.randint(-2000, 2001, size=(5, 5))/100
+        self.b1 = np.random.randint(-2000, 2001, size=(5, 1))/100
 
-        self.weights_layer2 = np.random.randint(-10, 11, size=(2, 5)) / 10
-        self.bias_layer2 = np.random.randint(-10, 11, size=(2, 1)) / 10
+        self.w2 = np.random.randint(-2000, 2001, size=(2, 5))/100
+        self.b2 = np.random.randint(-2000, 2001, size=(2, 1))/100
 
         self.hidden = np.zeros(5)
 
@@ -62,8 +64,8 @@ class Rex(pygame.sprite.Sprite):
         self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
 
     def feed_forward(self):
-        self.hidden = relu(self.weights_layer1.dot(self.inputs)[np.newaxis].transpose() + self.bias_layer1)
-        output = relu(self.weights_layer2.dot(self.hidden) + self.bias_layer2)
+        self.hidden = relu(self.w1.dot(self.inputs)[np.newaxis].transpose() + self.b1)
+        output = relu(self.w2.dot(self.hidden) + self.b2)
         return output
 
     def update(self):
@@ -224,7 +226,7 @@ while True:
     if is_off_screen(obstacle_group.sprites()[0]):
         obstacle_group.remove(obstacle_group.sprites()[0])
         if random.randint(0, 1) and distance > 500:
-            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 2)*32) 
+            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 2)*40) 
         else:
             new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 1)) 
         obstacle_group.add(new_obstacle)
@@ -254,6 +256,9 @@ while True:
 
         if rex.state == 'dead':
             population_dead += 1
+            if is_off_screen(rex):
+                rex.rect[0] = SCREEN_WIDTH
+                rex.rect[1] = SCREEN_HEIGHT
         else:
             rex.dist = distance
             
