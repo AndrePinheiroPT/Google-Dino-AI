@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-POPULATION_LENGTH = 100
+POPULATION_LENGTH = 150
 
 def start_population(Especie):
     especie_group = pygame.sprite.Group()
@@ -43,7 +43,7 @@ def fitness(population, ref):
 
 def mutation(entitie):
     for i in range(4):
-        rvalue = np.random.randint(-2000, 2001)/100
+        rvalue = np.random.randint(-1000, 1001)
         if np.random.random() <= 0.05:
             if i == 0:
                 entitie.w1[np.random.randint(5)][np.random.randint(5)] = rvalue

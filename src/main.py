@@ -43,11 +43,11 @@ class Rex(pygame.sprite.Sprite):
 
         self.inputs = None
         
-        self.w1 = np.random.randint(-2000, 2001, size=(5, 5))/100
-        self.b1 = np.random.randint(-2000, 2001, size=(5, 1))/100
+        self.w1 = np.random.randint(-1000, 1001, size=(5, 5))
+        self.b1 = np.random.randint(-1000, 1001, size=(5, 1))
 
-        self.w2 = np.random.randint(-2000, 2001, size=(2, 5))/100
-        self.b2 = np.random.randint(-2000, 2001, size=(2, 1))/100
+        self.w2 = np.random.randint(-1000, 1001, size=(2, 5))
+        self.b2 = np.random.randint(-1000, 1001, size=(2, 1))
 
         self.hidden = np.zeros(5)
 
@@ -188,12 +188,12 @@ def is_off_screen(sprite):
     return sprite.rect[0] < -sprite.rect[2]
 
 rex_group = ground_group = obstacle_group = None
-distance = 0
+distance = 1
 def reset_game(randomic=False):
     global rex_group, ground_group, obstacle_group, distance
     
     rex_group = start_population(Rex) if randomic else new_generation(rex_group, distance, Rex)
-    distance = 0
+    distance = 1
 
     ground_group = pygame.sprite.Group()
     for i in range(0, 2):
@@ -230,14 +230,6 @@ while True:
         else:
             new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 1)) 
         obstacle_group.add(new_obstacle)
-    
-    rex_group.update()
-    ground_group.update()
-    obstacle_group.update()
-
-    rex_group.draw(screen)
-    ground_group.draw(screen)
-    obstacle_group.draw(screen)
 
     get_senses(rex_group, obstacle_group, [ground_speed])
     population_dead = 0
@@ -264,6 +256,14 @@ while True:
             
     if population_dead == POPULATION_LENGTH:
         reset_game()
+
+    rex_group.update()
+    ground_group.update()
+    obstacle_group.update()
+
+    rex_group.draw(screen)
+    ground_group.draw(screen)
+    obstacle_group.draw(screen)
     
     distance += ground_speed
     pygame.display.update()
