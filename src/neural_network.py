@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-POPULATION_LENGTH = 150
+POPULATION_LENGTH = 50
 
 def start_population(Especie):
     especie_group = pygame.sprite.Group()
@@ -23,15 +23,13 @@ def get_senses(especie_group, obstacles_group, args):
 def relu(x):
     return np.maximum(x, 0)
 
-def fitness(population, ref):
+def fitness_group(population):
     group = population
     new_group = pygame.sprite.Group()
     
     for k in range(POPULATION_LENGTH):
         best = group.sprites()[0]
         for esp in group.sprites():
-            esp.fitness = esp.dist / ref
-
             if best.fitness <= esp.fitness:
                 best = esp
         
@@ -81,7 +79,7 @@ def crossing_over(ent1, ent2, Esp):
 
 def new_generation(population, ref, Especie):
     new_population = pygame.sprite.Group()
-    population_fitness = fitness(population, ref)
+    population_fitness = fitness_group(population)
 
     for i in range(0, POPULATION_LENGTH, 2):
         if i < POPULATION_LENGTH:
@@ -92,7 +90,6 @@ def new_generation(population, ref, Especie):
             prev_ent.b2 = population_fitness.sprites()[i].b2
 
             new_population.add(prev_ent)
-
         try:
             new_ent = crossing_over(population_fitness.sprites()[i], population_fitness.sprites()[i+1], Especie)
             new_population.add(mutation(new_ent))
@@ -100,3 +97,7 @@ def new_generation(population, ref, Especie):
             pass
 
     return new_population
+
+
+def neural_network(screen, entitie, x, y):
+    graph = math_tools.Graph()

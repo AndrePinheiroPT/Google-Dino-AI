@@ -1,10 +1,8 @@
-from curses import KEY_DOWN
-from pickle import POP
-from tkinter import HIDDEN
 import pygame, random
 from pygame.locals import *
 import numpy as np
 from neural_network import *
+import os
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 500
@@ -21,26 +19,36 @@ OBSTACLE_GAP = SCREEN_WIDTH*0.75
 game_run = True
 ground_speed = 8
 
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption('T-Rex')
+pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+current_path = os.path.dirname(__file__)
+rex_path = os.path.join(os.path.join(current_path, 'assets'), 'rex')
+bird_path = os.path.join(os.path.join(current_path, 'assets'), 'bird')
+cactus_path = os.path.join(os.path.join(current_path, 'assets'), 'cactus')
+
+rex_group = ground_group = obstacle_group = None
+distance = 1
+
 class Rex(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
 
         self.rex_stop_images = [
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex1.png').convert_alpha(),
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex4.png').convert_alpha()
+            pygame.image.load(os.path.join(rex_path, 'rex1.png')).convert_alpha(),
+            pygame.image.load(os.path.join(rex_path, 'rex4.png')).convert_alpha()
         ]
         self.rex_run_images = [
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex2.png').convert_alpha(),
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex3.png').convert_alpha()
+            pygame.image.load(os.path.join(rex_path, 'rex2.png')).convert_alpha(),
+            pygame.image.load(os.path.join(rex_path, 'rex3.png')).convert_alpha()
         ]
         self.rex_down_images = [
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex5.png').convert_alpha(),
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/rex/rex6.png').convert_alpha()
+            pygame.image.load(os.path.join(rex_path, 'rex5.png')).convert_alpha(),
+            pygame.image.load(os.path.join(rex_path, 'rex6.png')).convert_alpha()
         ]
 
-        self.dist = 0
         self.fitness = 0
-
         self.inputs = None
         
         self.w1 = np.random.randint(-1000, 1001, size=(5, 5))
@@ -61,7 +69,7 @@ class Rex(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect[0] = SCREEN_WIDTH/2 - 300 + random.randint(-25, 25)
-        self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
+        self.rect[1] = round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3])
 
     def feed_forward(self):
         self.hidden = relu(self.w1.dot(self.inputs)[np.newaxis].transpose() + self.b1)
@@ -86,9 +94,9 @@ class Rex(pygame.sprite.Sprite):
             self.rect[3] = self.image.get_rect()[3]
             self.mask = pygame.mask.from_surface(self.image)
 
-            if self.rect[1] >= SCREEN_HEIGHT/2 + (35 - self.rect[3]) or self.state == 'shifting':
+            if self.rect[1] >= round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3]) or self.state == 'shifting':
                 self.state == 'running'
-                self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
+                self.rect[1] = round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3])
                 self.speed = 0 
                 if self.rect[3] < 40:
                     self.state == 'shifting'
@@ -115,37 +123,36 @@ class Rex(pygame.sprite.Sprite):
     def dead(self):
         self.state = 'dead'
         self.image = self.rex_stop_images[1]
-        self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
 
 class Ground(pygame.sprite.Sprite):
     def __init__(self, x):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/ground.png')
+        self.image = pygame.image.load(os.path.join(os.path.join(current_path, 'assets'), 'ground.png'))
         self.image = pygame.transform.scale(self.image, (GROUND_WIDTH, GROUND_HEIGHT))
         self.rect = self.image.get_rect()
         self.rect[0] = x
 
     def update(self):
         self.rect[0] -= ground_speed
-        self.rect[1] = SCREEN_HEIGHT/2 + 20 
+        self.rect[1] = round(7*SCREEN_HEIGHT/8) + 20 
 
 class Cactus(pygame.sprite.Sprite):
     def __init__(self, x, is_big):
         pygame.sprite.Sprite.__init__(self)
         self.images = [
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/cactus/big-cactus-1.png').convert_alpha(),
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/cactus/big-cactus-2.png').convert_alpha(),
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/cactus/big-cactus-3.png').convert_alpha(),
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/cactus/little-cactus-1.png').convert_alpha(),
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/cactus/little-cactus-2.png').convert_alpha(),
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/cactus/little-cactus-3.png').convert_alpha(),
+            pygame.image.load(os.path.join(cactus_path, 'big-cactus-1.png')).convert_alpha(),
+            pygame.image.load(os.path.join(cactus_path, 'big-cactus-2.png')).convert_alpha(),
+            pygame.image.load(os.path.join(cactus_path, 'big-cactus-3.png')).convert_alpha(),
+            pygame.image.load(os.path.join(cactus_path, 'little-cactus-1.png')).convert_alpha(),
+            pygame.image.load(os.path.join(cactus_path, 'little-cactus-2.png')).convert_alpha(),
+            pygame.image.load(os.path.join(cactus_path, 'little-cactus-3.png')).convert_alpha(),
         ]
 
         self.image = self.images[random.randint(0, 2) if is_big else random.randint(3, 5)]
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.rect[0] = x
-        self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3])
+        self.rect[1] = round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3])
         self.h = self.rect[1]
     
     def update(self):
@@ -155,8 +162,8 @@ class Bird(pygame.sprite.Sprite):
     def __init__(self, x, h):
         pygame.sprite.Sprite.__init__(self)
         self.images = [
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/bird/bird1.png').convert_alpha(),
-            pygame.image.load(r'/home/pi/Documents/GitProjects/T-Rex/assets/bird/bird2.png').convert_alpha()
+            pygame.image.load(os.path.join(bird_path, 'bird1.png')).convert_alpha(),
+            pygame.image.load(os.path.join(bird_path, 'bird2.png')).convert_alpha()
         ]
 
         self.time = 0
@@ -166,7 +173,7 @@ class Bird(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect[0] = x
-        self.rect[1] = SCREEN_HEIGHT/2 + (35 - self.rect[3]) - h
+        self.rect[1] = round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3]) - h
         self.h = h
     
     def update(self):
@@ -175,20 +182,10 @@ class Bird(pygame.sprite.Sprite):
             self.image = self.images[self.current_image]
         self.time += 1
         self.rect[0] -= ground_speed
-        
-
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('T-Rex')
-pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-pygame.font.init()
-font = pygame.font.SysFont('Arial', 15)
 
 def is_off_screen(sprite):
     return sprite.rect[0] < -sprite.rect[2]
 
-rex_group = ground_group = obstacle_group = None
-distance = 1
 def reset_game(randomic=False):
     global rex_group, ground_group, obstacle_group, distance
     
@@ -205,14 +202,30 @@ def reset_game(randomic=False):
         cactus = Cactus(SCREEN_WIDTH + i*OBSTACLE_GAP, random.randint(0, 1))
         obstacle_group.add(cactus)
 
-
 reset_game(True) 
+
+def neural_network(x, y):
+    layer_gap = 100
+    radius = 20
+    # first layer
+    for i in range(1, 6):
+        pygame.draw.circle(screen, (255, 0, 0), (x + 50, y + 50*i), radius)
+        pygame.draw.circle(screen, (255, 0, 0), (x + 50 + layer_gap, y + 50*i), radius)
+        for j in range(1, 6):  
+            pygame.draw.line(screen, (255, 255, 0), (x + 50 + radius, y + 50*i), (x + 50 + layer_gap - radius, y + 50*j))
+        
+    # secound layer
+    for j in range(0, 2):
+        pygame.draw.circle(screen, (255, 0, 0), (x + 50 + 2*layer_gap, y + 100 + 50*j), radius)
+        for i in range(1, 6):
+            pygame.draw.line(screen, (255, 255, 0), (x + 50 + radius + layer_gap, y + 50*i), (x + 50 + 2*layer_gap - radius, y + 100 + 50*j))
+                
 
 clock = pygame.time.Clock()
 while True:
     clock.tick(50)
     screen.fill(WHITE)
-    
+
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
@@ -226,36 +239,42 @@ while True:
     if is_off_screen(obstacle_group.sprites()[0]):
         obstacle_group.remove(obstacle_group.sprites()[0])
         if random.randint(0, 1) and distance > 500:
-            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 2)*40) 
+            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-50, 70), random.randint(0, 2)*30) 
         else:
-            new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-70, 70), random.randint(0, 1)) 
+            new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-50, 70), random.randint(0, 1)) 
         obstacle_group.add(new_obstacle)
 
     get_senses(rex_group, obstacle_group, [ground_speed])
+
     population_dead = 0
+    best_rex = rex_group.sprites()[0]
     for rex in rex_group.sprites():
         outputs = rex.feed_forward()
 
-        if rex.rect[1] >= SCREEN_HEIGHT/2 - 15 and rex.state != 'dead':
+        if rex.rect[1] >= round(7*SCREEN_HEIGHT/8) - 15 and rex.state != 'dead':
             rex.state = 'running'
         if outputs[0] > 0:
             rex.bump()
         elif outputs[1] > 0:
             rex.shift() 
 
-        if pygame.sprite.spritecollideany(rex, obstacle_group, pygame.sprite.collide_mask):
+        if pygame.sprite.spritecollideany(rex, obstacle_group, pygame.sprite.collide_mask) or rex.state == 'dead':
             rex.dead()
-
-        if rex.state == 'dead':
             population_dead += 1
             if is_off_screen(rex):
                 rex.rect[0] = SCREEN_WIDTH
                 rex.rect[1] = SCREEN_HEIGHT
-        else:
-            rex.dist = distance
-            
+            continue
+
+        rex.fitness = distance / 100
+
+        if best_rex.fitness <= rex.fitness:
+            best_rex = rex
+
     if population_dead == POPULATION_LENGTH:
         reset_game()
+
+    neural_network(0, 0)
 
     rex_group.update()
     ground_group.update()
@@ -265,5 +284,5 @@ while True:
     ground_group.draw(screen)
     obstacle_group.draw(screen)
     
-    distance += ground_speed
+    distance += 1
     pygame.display.update()
