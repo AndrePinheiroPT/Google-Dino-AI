@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-POPULATION_LENGTH = 50
+POPULATION_LENGTH = 100
 
 def start_population(Especie):
     especie_group = pygame.sprite.Group()
@@ -24,7 +24,7 @@ def relu(x):
     return np.maximum(x, 0)
 
 def fitness_group(population):
-    group = population
+    group = population.copy()
     new_group = pygame.sprite.Group()
     
     for k in range(POPULATION_LENGTH):
@@ -42,7 +42,7 @@ def fitness_group(population):
 def mutation(entitie):
     for i in range(4):
         rvalue = np.random.randint(-1000, 1001)
-        if np.random.random() <= 0.05:
+        if np.random.random() <= 0.1:
             if i == 0:
                 entitie.w1[np.random.randint(5)][np.random.randint(5)] = rvalue
             elif i == 1:
@@ -89,7 +89,7 @@ def new_generation(population, ref, Especie):
             prev_ent.b1 = population_fitness.sprites()[i].b1
             prev_ent.b2 = population_fitness.sprites()[i].b2
 
-            new_population.add(prev_ent)
+            new_population.add(mutation(prev_ent))
         try:
             new_ent = crossing_over(population_fitness.sprites()[i], population_fitness.sprites()[i+1], Especie)
             new_population.add(mutation(new_ent))
