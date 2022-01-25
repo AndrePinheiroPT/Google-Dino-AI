@@ -13,6 +13,7 @@ ACCELERATION = 1
 
 GROUND_WIDTH = 2*SCREEN_WIDTH
 GROUND_HEIGHT = 15
+GROUND_Y = round(7*SCREEN_HEIGHT/8)
 
 OBSTACLE_GAP = SCREEN_WIDTH*0.75
 
@@ -68,8 +69,8 @@ class Rex(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
         self.rect = self.image.get_rect()
-        self.rect[0] = SCREEN_WIDTH/2 - 300 + random.randint(-25, 25)
-        self.rect[1] = round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3])
+        self.rect[0] = SCREEN_WIDTH/2 - 300 + random.randint(-30, 30)
+        self.rect[1] = GROUND_Y - self.rect[3] 
 
     def feed_forward(self):
         self.hidden = relu(self.w1.dot(self.inputs)[np.newaxis].transpose() + self.b1)
@@ -77,35 +78,31 @@ class Rex(pygame.sprite.Sprite):
         return output
 
     def update(self):
-        if self.state != 'dead':
-            self.time += 1
-            if self.state == 'bumping':
-                self.image = self.rex_stop_images[0]
-            elif self.state == 'running': 
-                if self.time % 5 == 0:
-                    self.current_image = (self.current_image + 1) % 2
-                    self.image = self.rex_run_images[self.current_image]
-                    
-            elif self.state == 'shifting':
-                if self.time % 5 == 0:
-                    self.current_image = (self.current_image + 1) % 2
-                    self.image = self.rex_down_images[self.current_image]
+        self.time += 1
+        if self.state == 'bumping':
+            self.image = self.rex_stop_images[0]
+        elif self.state == 'running': 
+            if self.time % 5 == 0:
+                self.current_image = (self.current_image + 1) % 2
+                self.image = self.rex_run_images[self.current_image]
+                
+        elif self.state == 'shifting':
+            if self.time % 5 == 0:
+                self.current_image = (self.current_image + 1) % 2
+                self.image = self.rex_down_images[self.current_image]
 
-            self.rect[3] = self.image.get_rect()[3]
-            self.mask = pygame.mask.from_surface(self.image)
+        self.rect[3] = self.image.get_rect()[3]
+        self.mask = pygame.mask.from_surface(self.image)
+        if self.rect[1] >= GROUND_Y - self.rect[3]  or self.state == 'shifting':
+            self.state = 'running'
+            self.rect[1] = GROUND_Y - self.rect[3]
+            self.speed = 0 
+            if self.rect[3] < 40:
+                self.state = 'shifting'
+        else:
+            self.speed += ACCELERATION
 
-            if self.rect[1] >= round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3]) or self.state == 'shifting':
-                self.state == 'running'
-                self.rect[1] = round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3])
-                self.speed = 0 
-                if self.rect[3] < 40:
-                    self.state == 'shifting'
-            else:
-                self.speed += ACCELERATION
-
-            self.rect[1] += self.speed
-        else: 
-            self.rect[0] -= ground_speed
+        self.rect[1] += self.speed
     
     def set_inputs(self, inputs):
         self.inputs = np.array(inputs)
@@ -134,7 +131,7 @@ class Ground(pygame.sprite.Sprite):
 
     def update(self):
         self.rect[0] -= ground_speed
-        self.rect[1] = round(7*SCREEN_HEIGHT/8) + 20 
+        self.rect[1] = GROUND_Y - 20
 
 class Cactus(pygame.sprite.Sprite):
     def __init__(self, x, is_big):
@@ -152,7 +149,7 @@ class Cactus(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.rect[0] = x
-        self.rect[1] = round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3])
+        self.rect[1] = GROUND_Y - self.rect[3]
         self.h = self.rect[1]
     
     def update(self):
@@ -173,7 +170,7 @@ class Bird(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect[0] = x
-        self.rect[1] = round(7*SCREEN_HEIGHT/8) + (35 - self.rect[3]) - h
+        self.rect[1] = GROUND_Y - (self.rect[3] + h)
         self.h = h
     
     def update(self):
@@ -186,10 +183,10 @@ class Bird(pygame.sprite.Sprite):
 def is_off_screen(sprite):
     return sprite.rect[0] < -sprite.rect[2]
 
-def reset_game(randomic=False):
+def reset_game(randomic=False, entitie_group=rex_group):
     global rex_group, ground_group, obstacle_group, distance
     
-    rex_group = start_population(Rex) if randomic else new_generation(rex_group, distance, Rex)
+    rex_group = start_population(Rex) if randomic else new_generation(entitie_group, distance, Rex)
     distance = 1
 
     ground_group = pygame.sprite.Group()
@@ -203,30 +200,9 @@ def reset_game(randomic=False):
         obstacle_group.add(cactus)
 
 reset_game(True) 
-
-def neural_network(x, y, entitie):
-    layer_gap = 100
-    radius = 20
-    # first layer
-    for i in range(1, 6):
-        input_color = (entitie.inputs[i-1]*255/1100, 0, 0)
-        hidden_color = (255, 0, 0) if entitie.hidden[i-1] > 0 else (0, 0, 0)
-        pygame.draw.circle(screen, input_color, (x + 50, y + 50*i), radius)
-        pygame.draw.circle(screen, hidden_color, (x + 50 + layer_gap, y + 50*i), radius)
-        for j in range(1, 6):  
-            w_color = (255, 0, 0) if entitie.w1[i-1][j-1]*entitie.inputs[j-1] <= 0 else (200, 200, 200)
-            pygame.draw.line(screen, w_color, (x + 50 + radius, y + 50*i), (x + 50 + layer_gap - radius, y + 50*j), 1)
-        
-    # secound layer
-    for j in range(0, 2):
-        outputs = entitie.feed_forward()
-        output_color = (230, 0, 0) if outputs[j] > 0 else (0, 0, 0)
-        pygame.draw.circle(screen, output_color, (x + 50 + 2*layer_gap, y + 100 + 50*j), radius)
-        for i in range(1, 6):
-            w_color = (255, 0, 0) if entitie.w2[j][i-1]*entitie.hidden[i-1] <= 0 else (200, 200, 200)
-            pygame.draw.line(screen, w_color, (x + 50 + radius + layer_gap, y + 50*i), (x + 50 + 2*layer_gap - radius, y + 100 + 50*j), 1)
                 
 
+generation_group = pygame.sprite.Group()
 clock = pygame.time.Clock()
 while True:
     clock.tick(50)
@@ -245,18 +221,21 @@ while True:
     if is_off_screen(obstacle_group.sprites()[0]):
         obstacle_group.remove(obstacle_group.sprites()[0])
         if random.randint(0, 1) and distance > 500:
-            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-50, 70), random.randint(0, 2)*29) 
+            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-60, 60), random.randint(0, 2)*20) 
         else:
-            new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-50, 70), random.randint(0, 1)) 
+            new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-60, 60), random.randint(0, 1)) 
         obstacle_group.add(new_obstacle)
 
-    get_senses(rex_group, obstacle_group, [ground_speed])
-
+    
     population_dead = 0
+    
     for rex in rex_group.sprites():
+        get_senses(rex, obstacle_group, ground_speed)
         outputs = rex.feed_forward()
+        
+        rex.fitness = distance / 100
 
-        if rex.rect[1] >= round(7*SCREEN_HEIGHT/8) - 15 and rex.state != 'dead':
+        if rex.rect[1] >= GROUND_Y - rex.rect[3]:
             rex.state = 'running'
         if not (outputs[0] > 0 and outputs[1] > 0):
             if outputs[0] > 0:
@@ -264,21 +243,17 @@ while True:
             if outputs[1] > 0:
                 rex.shift() 
 
-        if pygame.sprite.spritecollideany(rex, obstacle_group, pygame.sprite.collide_mask) or rex.state == 'dead':
-            rex.dead()
-            population_dead += 1
-            if is_off_screen(rex):
-                rex.rect[0] = SCREEN_WIDTH
-                rex.rect[1] = SCREEN_HEIGHT
-            continue
+        if pygame.sprite.spritecollideany(rex, obstacle_group, pygame.sprite.collide_mask):
+            generation_group.add(rex)
+            rex_group.remove(rex)
+        
 
-        rex.fitness = distance / 100
-
-    best_rex = fitness_group(rex_group).sprites()[0]
-    neural_network(0, 0, best_rex)
+    
+    best_rex = sort_fitness(rex_group).sprites()[0]
+    #neural_network(0, 0, best_rex)
     
     if population_dead == POPULATION_LENGTH:
-        reset_game()
+        reset_game(entitie_group=generation_group)
 
     rex_group.update()
     ground_group.update()

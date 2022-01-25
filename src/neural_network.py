@@ -9,21 +9,17 @@ def start_population(Especie):
 
     return especie_group
 
-def get_senses(especie_group, obstacles_group, args):
-    for especie in especie_group.sprites():
-        for obstacle in obstacles_group.sprites():
-            if especie.rect[0] <= obstacle.rect[0]:
-                # distance between rex and obstacle, obstacle witdth, obstacle height, obstacle distance to the ground
-                inputs = [obstacle.rect[0] - especie.rect[0], obstacle.rect[2], obstacle.rect[3], obstacle.h, *args]
-                especie.set_inputs(inputs)
-                break
-            else:
-                continue
+def get_senses(entitie, obstacles_group, velocity):
+    for obstacle in obstacles_group.sprites():
+        # distance between rex and obstacle, obstacle witdth, obstacle height, obstacle distance to the ground
+        inputs = [obstacle.rect[0] - entitie.rect[0], obstacle.rect[2], obstacle.rect[3], obstacle.h, velocity]
+        entitie.set_inputs(inputs)
+        break
 
 def relu(x):
     return np.maximum(x, 0)
 
-def fitness_group(population):
+def sort_fitness(population):
     group = population.copy()
     new_group = pygame.sprite.Group()
     
@@ -79,25 +75,20 @@ def crossing_over(ent1, ent2, Esp):
 
 def new_generation(population, ref, Especie):
     new_population = pygame.sprite.Group()
-    population_fitness = fitness_group(population)
 
     for i in range(0, POPULATION_LENGTH, 2):
         if i < POPULATION_LENGTH:
             prev_ent = Especie()
-            prev_ent.w1 = population_fitness.sprites()[i].w1
-            prev_ent.w2 = population_fitness.sprites()[i].w2
-            prev_ent.b1 = population_fitness.sprites()[i].b1
-            prev_ent.b2 = population_fitness.sprites()[i].b2
+            prev_ent.w1 = population.sprites()[i].w1
+            prev_ent.w2 = population.sprites()[i].w2
+            prev_ent.b1 = population.sprites()[i].b1
+            prev_ent.b2 = population.sprites()[i].b2
 
             new_population.add(mutation(prev_ent))
         try:
-            new_ent = crossing_over(population_fitness.sprites()[i], population_fitness.sprites()[i+1], Especie)
+            new_ent = crossing_over(population.sprites()[i], population.sprites()[i+1], Especie)
             new_population.add(mutation(new_ent))
         except Exception:
             pass
 
     return new_population
-
-
-def neural_network(screen, entitie, x, y):
-    graph = math_tools.Graph()
