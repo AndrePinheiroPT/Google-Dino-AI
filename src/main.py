@@ -1,7 +1,8 @@
-import pygame, random
 from pygame.locals import *
-import numpy as np
+from draw import *
 from neural_network import *
+import pygame, random
+import numpy as np
 import os
 
 SCREEN_WIDTH = 800
@@ -15,9 +16,9 @@ GROUND_WIDTH = 2*SCREEN_WIDTH
 GROUND_HEIGHT = 15
 GROUND_Y = round(7*SCREEN_HEIGHT/8)
 
-OBSTACLE_GAP = SCREEN_WIDTH*0.75
+OBSTACLE_GAP = SCREEN_WIDTH*0.80
+PRINT_LIMIT = 100
 
-game_run = True
 ground_speed = 8
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -29,7 +30,7 @@ rex_path = os.path.join(os.path.join(current_path, 'assets'), 'rex')
 bird_path = os.path.join(os.path.join(current_path, 'assets'), 'bird')
 cactus_path = os.path.join(os.path.join(current_path, 'assets'), 'cactus')
 
-rex_group = ground_group = obstacle_group = None
+rex_group = ground_group = obstacle_group = generation_group = None
 distance = 1
 
 class Rex(pygame.sprite.Sprite):
@@ -117,9 +118,8 @@ class Rex(pygame.sprite.Sprite):
         if self.state == 'running' and self.state != 'dead':
             self.state = 'shifting'
 
-    def dead(self):
-        self.state = 'dead'
-        self.image = self.rex_stop_images[1]
+    def draw(self):
+        screen.blit(self.image, self.rect)
 
 class Ground(pygame.sprite.Sprite):
     def __init__(self, x):
@@ -183,10 +183,11 @@ class Bird(pygame.sprite.Sprite):
 def is_off_screen(sprite):
     return sprite.rect[0] < -sprite.rect[2]
 
-def reset_game(randomic=False, entitie_group=rex_group):
-    global rex_group, ground_group, obstacle_group, distance
+def reset_game(randomic=False):
+    global rex_group, generation_group, ground_group, obstacle_group, distance
     
-    rex_group = start_population(Rex) if randomic else new_generation(entitie_group, distance, Rex)
+    rex_group = start_population(Rex) if randomic else new_generation(generation_group, Rex)
+    generation_group = pygame.sprite.Group()
     distance = 1
 
     ground_group = pygame.sprite.Group()
@@ -201,8 +202,6 @@ def reset_game(randomic=False, entitie_group=rex_group):
 
 reset_game(True) 
                 
-
-generation_group = pygame.sprite.Group()
 clock = pygame.time.Clock()
 while True:
     clock.tick(50)
@@ -221,14 +220,13 @@ while True:
     if is_off_screen(obstacle_group.sprites()[0]):
         obstacle_group.remove(obstacle_group.sprites()[0])
         if random.randint(0, 1) and distance > 500:
-            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-60, 60), random.randint(0, 2)*20) 
+            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-60, 60), random.randint(0, 2)*30) 
         else:
             new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-60, 60), random.randint(0, 1)) 
         obstacle_group.add(new_obstacle)
 
-    
-    population_dead = 0
-    
+    count = 0
+    best_rex = rex_group.sprites()[0]
     for rex in rex_group.sprites():
         get_senses(rex, obstacle_group, ground_speed)
         outputs = rex.feed_forward()
@@ -247,19 +245,23 @@ while True:
             generation_group.add(rex)
             rex_group.remove(rex)
         
+        if count < PRINT_LIMIT:
+            rex.draw()
 
+        if rex.fitness >= best_rex.fitness:
+            best_rex = rex
+
+        count += 1
+
+    draw_neural_network(screen, best_rex, 0, 0)
     
-    best_rex = sort_fitness(rex_group).sprites()[0]
-    #neural_network(0, 0, best_rex)
-    
-    if population_dead == POPULATION_LENGTH:
-        reset_game(entitie_group=generation_group)
+    if len(generation_group.sprites()) == POPULATION_LENGTH:
+        reset_game()
 
     rex_group.update()
     ground_group.update()
     obstacle_group.update()
 
-    rex_group.draw(screen)
     ground_group.draw(screen)
     obstacle_group.draw(screen)
     

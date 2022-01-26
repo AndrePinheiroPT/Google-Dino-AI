@@ -1,11 +1,11 @@
 import pygame
 
-def neural_network(screen, x, y, entitie):
+def draw_neural_network(screen, entitie, x, y):
     layer_gap = 100
     radius = 20
     # first layer
     for i in range(1, 6):
-        input_color = (entitie.inputs[i-1]*255/1100, 0, 0)
+        input_color = (255, 0, 0)
         hidden_color = (255, 0, 0) if entitie.hidden[i-1] > 0 else (0, 0, 0)
         pygame.draw.circle(screen, input_color, (x + 50, y + 50*i), radius)
         pygame.draw.circle(screen, hidden_color, (x + 50 + layer_gap, y + 50*i), radius)

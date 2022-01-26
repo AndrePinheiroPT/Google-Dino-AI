@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-POPULATION_LENGTH = 100
+POPULATION_LENGTH = 5000
 
 def start_population(Especie):
     especie_group = pygame.sprite.Group()
@@ -23,7 +23,7 @@ def sort_fitness(population):
     group = population.copy()
     new_group = pygame.sprite.Group()
     
-    for k in range(POPULATION_LENGTH):
+    for k in range(len(group.sprites())):
         best = group.sprites()[0]
         for esp in group.sprites():
             if best.fitness <= esp.fitness:
@@ -73,20 +73,21 @@ def crossing_over(ent1, ent2, Esp):
     return new_entitie
 
 
-def new_generation(population, ref, Especie):
+def new_generation(population, Especie):
     new_population = pygame.sprite.Group()
+    sort_entities = sort_fitness(population.copy())
 
     for i in range(0, POPULATION_LENGTH, 2):
         if i < POPULATION_LENGTH:
             prev_ent = Especie()
-            prev_ent.w1 = population.sprites()[i].w1
-            prev_ent.w2 = population.sprites()[i].w2
-            prev_ent.b1 = population.sprites()[i].b1
-            prev_ent.b2 = population.sprites()[i].b2
+            prev_ent.w1 = sort_entities.sprites()[i].w1
+            prev_ent.w2 = sort_entities.sprites()[i].w2
+            prev_ent.b1 = sort_entities.sprites()[i].b1
+            prev_ent.b2 = sort_entities.sprites()[i].b2
 
             new_population.add(mutation(prev_ent))
         try:
-            new_ent = crossing_over(population.sprites()[i], population.sprites()[i+1], Especie)
+            new_ent = crossing_over(sort_entities.sprites()[i], sort_entities.sprites()[i+1], Especie)
             new_population.add(mutation(new_ent))
         except Exception:
             pass
