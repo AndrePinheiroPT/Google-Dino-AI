@@ -253,7 +253,7 @@ while True:
 
         count += 1
 
-    draw_neural_network(screen, best_rex, 0, 0)
+    draw_neural_network(screen, best_rex, 50, 50)
     
     if len(generation_group.sprites()) == POPULATION_LENGTH:
         reset_game()
