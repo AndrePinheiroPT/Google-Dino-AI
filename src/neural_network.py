@@ -13,7 +13,7 @@ def get_senses(entitie, obstacles_group, velocity):
     for obstacle in obstacles_group.sprites():
         # distance between rex and obstacle, obstacle witdth, obstacle height, obstacle distance to the ground
         inputs = [obstacle.rect[0] - entitie.rect[0], obstacle.rect[2], obstacle.rect[3], obstacle.h, velocity]
-        entitie.set_inputs(inputs)
+        entitie.set_inputs(inputs, [800, 75, 60, 60, 14])
         break
 
 def relu(x):

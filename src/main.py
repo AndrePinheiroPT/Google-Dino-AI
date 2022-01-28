@@ -51,7 +51,7 @@ class Rex(pygame.sprite.Sprite):
         ]
 
         self.fitness = 0
-        self.inputs = None
+        self.inputs = self.ref_inputs = None
         
         self.w1 = np.random.randint(-1000, 1001, size=(5, 5))
         self.b1 = np.random.randint(-1000, 1001, size=(5, 1))
@@ -105,8 +105,9 @@ class Rex(pygame.sprite.Sprite):
 
         self.rect[1] += self.speed
     
-    def set_inputs(self, inputs):
+    def set_inputs(self, inputs, ref):
         self.inputs = np.array(inputs)
+        self.ref_inputs = np.array(ref)
 
     def bump(self):
         if self.state != 'bumping' and self.state != 'shifting' and self.state != 'dead':
@@ -150,7 +151,7 @@ class Cactus(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect[0] = x
         self.rect[1] = GROUND_Y - self.rect[3]
-        self.h = self.rect[1]
+        self.h = GROUND_Y - self.rect[1]
     
     def update(self):
         self.rect[0] -= ground_speed
