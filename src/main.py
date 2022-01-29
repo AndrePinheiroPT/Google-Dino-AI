@@ -19,18 +19,28 @@ GROUND_Y = round(7*SCREEN_HEIGHT/8)
 OBSTACLE_GAP = SCREEN_WIDTH*0.80
 PRINT_LIMIT = 100
 
+NEURON_GAP_X = 100
+NEURON_GAP_Y = 10
+NEURON_RADIUS = 20
+
 ground_speed = 8
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('T-Rex')
 pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.font.init()
+font = pygame.font.SysFont('Arial', 15)
 
 current_path = os.path.dirname(__file__)
 rex_path = os.path.join(os.path.join(current_path, 'assets'), 'rex')
 bird_path = os.path.join(os.path.join(current_path, 'assets'), 'bird')
 cactus_path = os.path.join(os.path.join(current_path, 'assets'), 'cactus')
 
+gap_neuron_text = 0
+generation = 0
+avarage_fitness = 0
 rex_group = ground_group = obstacle_group = generation_group = None
+highest_distance = 0
 distance = 1
 
 class Rex(pygame.sprite.Sprite):
@@ -254,10 +264,24 @@ while True:
 
         count += 1
 
-    draw_neural_network(screen, best_rex, 50, 50)
+    texts = ['Distance to obstacle: ', 'Length (Obstacle): ', 'Width (Obstacle): ', 'Height (Obstacle): ', 'Velocity: ' ]
+    delta_y = 2*NEURON_RADIUS + NEURON_GAP_Y
+    for n in range(len(texts)):
+        rect = display_text(screen, font, (40, 42 + n*delta_y), texts[n] + f'{best_rex.inputs[n]}', (0, 0, 0))
+        if gap_neuron_text <= rect[2]:
+            gap_neuron_text = rect[2]
+    draw_neural_network(screen, best_rex, 40 + (gap_neuron_text+10) + NEURON_RADIUS, 50, 100, 10, 20)
+
+    display_text(screen, font, (200, 10), f'Best Rex Neural Network', (0, 0, 0))
+    display_text(screen, font, (500, 50 - NEURON_RADIUS), f'Generation: {generation}', (0, 0, 0))
+    display_text(screen, font, (500, 50 - NEURON_RADIUS + 20), f'Distance: {distance}', (0, 0, 0))
+    display_text(screen, font, (500, 50 - NEURON_RADIUS + 2*20), f'Highest distance: {highest_distance}', (0, 0, 0))
     
     if len(generation_group.sprites()) == POPULATION_LENGTH:
         reset_game()
+        generation += 1
+        ground_speed = 7
+        
 
     rex_group.update()
     ground_group.update()
@@ -267,4 +291,10 @@ while True:
     obstacle_group.draw(screen)
     
     distance += 1
+    if highest_distance <= distance:
+        highest_distance = distance
+
+    if distance % 1000 == 0 and ground_speed < 14:
+        ground_speed += 1
+
     pygame.display.update()

@@ -9,7 +9,7 @@ def initial_neuron(mp_y, array, delta_y, gap_y, radius):
         return round(mp_y - (len(array)-3)*delta_y)
 
 
-def draw_neural_network(screen, entitie, x, y, gap_x=100, gap_y=10, radius=20):
+def draw_neural_network(screen, entitie, x, y, gap_x, gap_y, radius):
     delta_y = 2*radius + gap_y
     my = y + (len(entitie.inputs) - 1)*delta_y/2
     outputs = entitie.feed_forward()
@@ -19,7 +19,7 @@ def draw_neural_network(screen, entitie, x, y, gap_x=100, gap_y=10, radius=20):
     # first layer
     for n in range(len(entitie.inputs)):
         i_y = y + n*delta_y
-        input_color = (255*abs(entitie.inputs[n])/entitie.ref_inputs[n], 0, 0)
+        input_color = (round(255*abs(entitie.inputs[n])/entitie.ref_inputs[n]), 0, 0)
         
         pygame.draw.circle(screen, input_color, (x, i_y), radius)
 
@@ -40,3 +40,9 @@ def draw_neural_network(screen, entitie, x, y, gap_x=100, gap_y=10, radius=20):
         for i in range(len(entitie.hidden)):
             w_color = (255, 0, 0) if entitie.w2[j][i]*entitie.hidden[i] <= 0 else (200, 200, 200)
             pygame.draw.line(screen, w_color, (x + gap_x + radius, hidden_init + i*delta_y), (x + 2*gap_x - radius, output_init + j*delta_y), 1)
+
+
+def display_text(screen, font, coords, txt, color):
+    textsurface = font.render(txt, False, color)
+    screen.blit(textsurface, coords)
+    return textsurface.get_rect()
