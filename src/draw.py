@@ -6,7 +6,7 @@ def initial_neuron(mp_y, array, delta_y, gap_y, radius):
     elif len(array) == 1:
         return round(mp_y)
     elif len(array) % 2 != 0:
-        return round(mp_y - (len(array)-3)*delta_y)
+        return round(mp_y - (len(array)/2 - 1/2)*delta_y)
 
 
 def draw_neural_network(screen, entitie, x, y, gap_x, gap_y, radius):

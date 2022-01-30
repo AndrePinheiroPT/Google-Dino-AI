@@ -17,7 +17,7 @@ GROUND_HEIGHT = 15
 GROUND_Y = round(7*SCREEN_HEIGHT/8)
 
 OBSTACLE_GAP = SCREEN_WIDTH*0.80
-PRINT_LIMIT = 100
+PRINT_LIMIT = 50
 
 NEURON_GAP_X = 100
 NEURON_GAP_Y = 10
@@ -26,7 +26,7 @@ NEURON_RADIUS = 20
 ground_speed = 8
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('T-Rex')
+pygame.display.set_caption('Google Dino AI')
 pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.font.init()
 font = pygame.font.SysFont('Arial', 15)
@@ -120,13 +120,13 @@ class Rex(pygame.sprite.Sprite):
         self.ref_inputs = np.array(ref)
 
     def bump(self):
-        if self.state != 'bumping' and self.state != 'shifting' and self.state != 'dead':
+        if self.state != 'bumping' and self.state != 'shifting':
             self.state = 'bumping'
             self.speed = -SPEED*2
             self.rect[1] += self.speed 
             
     def shift(self):
-        if self.state == 'running' and self.state != 'dead':
+        if self.state == 'running':
             self.state = 'shifting'
 
     def draw(self):
@@ -231,9 +231,9 @@ while True:
     if is_off_screen(obstacle_group.sprites()[0]):
         obstacle_group.remove(obstacle_group.sprites()[0])
         if random.randint(0, 1) and distance > 500:
-            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-60, 60), random.randint(0, 2)*30) 
+            new_obstacle = Bird(OBSTACLE_GAP*2 + random.randint(-40, 40), random.randint(0, 2)*30) 
         else:
-            new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-60, 60), random.randint(0, 1)) 
+            new_obstacle = Cactus(OBSTACLE_GAP*2 + random.randint(-40, 40), random.randint(0, 1)) 
         obstacle_group.add(new_obstacle)
 
     count = 0
@@ -294,7 +294,7 @@ while True:
     if highest_distance <= distance:
         highest_distance = distance
 
-    if distance % 1000 == 0 and ground_speed < 14:
+    if distance % 1000 == 0 and ground_speed < 16:
         ground_speed += 1
 
     pygame.display.update()
